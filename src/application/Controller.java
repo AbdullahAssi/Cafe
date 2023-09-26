@@ -5,6 +5,7 @@ import java.sql.Connection;
 import java.sql.Date;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
+import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.ResourceBundle;
@@ -26,6 +27,37 @@ import javafx.scene.layout.AnchorPane;
 import javafx.util.Duration;
 
 public class Controller implements Initializable{
+
+    @FXML
+    private TextField fp_ans;
+
+    @FXML
+    private Button fp_back;
+
+    @FXML
+    private Button fp_procced;
+
+    @FXML
+    private TextField fp_username;
+
+    @FXML
+    private Button np_back;
+
+    @FXML
+    private Button np_changebtn;
+
+    @FXML
+    private PasswordField np_confrimPass;
+
+    @FXML
+    private AnchorPane np_newPassform;
+
+    @FXML
+    private PasswordField np_newpass;
+
+    @FXML
+    private AnchorPane question_Form;
+
     @FXML
     private Hyperlink si_forotpass;
 
@@ -42,26 +74,29 @@ public class Controller implements Initializable{
     private TextField si_username;
 
     @FXML
+    private Button side_alreadybtn;
+
+    @FXML
     private Button side_createbtn1;
 
     @FXML
     private AnchorPane side_form;
 
     @FXML
-    private AnchorPane su_signupForm;
-    
-    @FXML
-    private Button side_alreadybtn;
-    
+    private TextField su_ans;
+
     @FXML
     private PasswordField su_pass;
+
+    @FXML
+    private AnchorPane su_signupForm;
 
     @FXML
     private TextField su_username;
     
     @FXML
-    private TextField su_ans;
-    
+    private ComboBox<String> fp_question;
+
     @FXML 
     private ComboBox<String> su_questions;
     
@@ -72,6 +107,46 @@ public class Controller implements Initializable{
     private String[] questionList = {"What is Your favorite color?","what is Your favorite food?","What is Your birthdate?", };
     
     private Alert alert;
+    
+    public void loginBtn() {
+    	if(si_username.getText().isEmpty() || si_pass.getText().isEmpty()) {
+    		alert = new Alert (AlertType.ERROR);
+    		alert.setTitle("Error Message");
+    		alert.setHeaderText(null);
+    		alert.setContentText("Incorrect Username/Password");
+    		alert.showAndWait();
+    	}
+    	else {
+    		String selectdata = "SELECT username,password From employee where username =? and password =?";
+    		
+    		connect = database.connectDB();
+    		
+    		try {
+    			prepare = connect.prepareStatement(selectdata);
+    			prepare.setString(1, si_username.getText());
+    			prepare.setString(2, si_pass.getText());
+    			
+    			result = prepare.executeQuery();
+    			if(result.next()) {
+    				alert = new Alert (AlertType.INFORMATION);
+    	    		alert.setTitle("Information Message");
+    	    		alert.setHeaderText(null);
+    	    		alert.setContentText("Successfully Logged in!");
+    	    		alert.showAndWait();
+    			}
+    			else {
+    				alert = new Alert (AlertType.ERROR);
+    	    		alert.setTitle("Error Message");
+    	    		alert.setHeaderText(null);
+    	    		alert.setContentText("Incorrect Username/Password");
+    	    		alert.showAndWait();
+    			}
+    		}
+    		catch(Exception e) {
+    			e.printStackTrace();
+    		}
+    	}
+    }
     public void regBtn() {
     	if(su_username.getText().isEmpty() || su_pass.getText().isEmpty() 
     			|| su_questions.getSelectionModel().getSelectedItem() ==null
@@ -171,6 +246,167 @@ public class Controller implements Initializable{
     	su_questions.setItems(listData); 
     }
     
+    public void ForgotpassQuestionList() {
+    	List<String> listQ = new ArrayList<>();
+    	
+    	for (String data : questionList) {
+    		listQ.add(data);
+    	}
+    	
+    	ObservableList<String> listData = FXCollections.observableArrayList(listQ);
+    	fp_question.setItems(listData);
+    }
+
+    public void procceedBtn () {
+    	if(fp_username.getText().isEmpty() || fp_question.getSelectionModel().getSelectedItem() == null || fp_ans.getText().isEmpty() ) {
+    		
+    		alert = new Alert (AlertType.ERROR);
+    		alert.setTitle("Error Message");
+    		alert.setHeaderText(null);
+    		alert.setContentText("Please fill all Blank fields");
+    		alert.showAndWait();
+    		
+    	}
+    	else {
+    		String selectData  = "SELECT username,question FROM employee WHERE username =? AND question = ? AND answer = ?";
+    		connect  = database.connectDB();
+    		
+    		try {
+    				prepare = connect.prepareStatement(selectData);
+    				prepare.setString(1, fp_username.getText());
+    				prepare.setString(2,(String)fp_question.getSelectionModel().getSelectedItem());
+    				prepare.setString(3, fp_ans.getText());
+    				
+    				result = prepare.executeQuery();
+    				
+    				if(result.next()) {
+    					np_newPassform.setVisible(true);
+    					question_Form.setVisible(false);
+    				}
+    				else {
+    					alert = new Alert (AlertType.ERROR);
+    		    		alert.setTitle("Error Message");
+    		    		alert.setHeaderText(null);
+    		    		alert.setContentText("Incorrect Information!");
+    		    		alert.showAndWait();
+    				}
+    		}
+    		catch(Exception e) {
+    			e.printStackTrace();
+    		}
+    	}
+    }
+    
+    public void changePass() {
+        if (np_newpass.getText().isEmpty() || np_confrimPass.getText().isEmpty()) {
+            Alert alert = new Alert(AlertType.ERROR);
+            alert.setTitle("Error Message");
+            alert.setHeaderText(null);
+            alert.setContentText("Please Fill all blanks!");
+            alert.showAndWait();
+        }
+        else if(!np_newpass.getText().equals(np_confrimPass.getText())) {
+        	Alert alert = new Alert(AlertType.ERROR);
+            alert.setTitle("Error Message");
+            alert.setHeaderText(null);
+            alert.setContentText("Confirm Password Doesnt Match");
+            alert.showAndWait();
+        	
+        }
+        else if(np_newpass.getText().length()<6) {
+			alert = new Alert (AlertType.ERROR);
+    		alert.setTitle("Error Message");
+    		alert.setHeaderText(null);
+    		alert.setContentText("Password Length Must be More than 6");
+    		alert.showAndWait();
+			
+		}
+        else {
+            Connection connect = null;
+            PreparedStatement prepare = null;
+            
+            try {
+                connect = database.connectDB();
+                
+                String username = fp_username.getText(); 
+                String updatePass = "UPDATE employee SET password=?, question=?, answer=? WHERE username=?";
+                prepare = connect.prepareStatement(updatePass);
+                prepare.setString(1, np_newpass.getText());
+                prepare.setString(2, fp_question.getSelectionModel().getSelectedItem());
+                prepare.setString(3, fp_ans.getText());
+                prepare.setString(4, username); 
+                
+                int rowsUpdated = prepare.executeUpdate();
+                
+                prepare.close();
+                connect.close();
+                
+                if (rowsUpdated > 0) {
+
+                    Alert successAlert = new Alert(AlertType.INFORMATION);
+                    successAlert.setTitle("Success");
+                    successAlert.setHeaderText(null);
+                    successAlert.setContentText("Password updated successfully.");
+                    successAlert.showAndWait();
+                    
+                    
+                	si_loginform.setVisible(true);
+        			np_newPassform.setVisible(false);
+                	
+                    np_newpass.setText("");
+                    fp_username.setText("");
+                    fp_question.getSelectionModel().clearSelection();
+                    fp_ans.setText("");
+                    np_confrimPass.setText("");
+                } else {
+                    Alert errorAlert = new Alert(AlertType.ERROR);
+                    errorAlert.setTitle("Error Message");
+                    errorAlert.setHeaderText(null);
+                    errorAlert.setContentText("Username not found. Password not updated.");
+                    errorAlert.showAndWait();
+                }
+            } catch (Exception e) {
+                e.printStackTrace();
+                
+                // Handle any exceptions here, e.g., display an error message
+                Alert errorAlert = new Alert(AlertType.ERROR);
+                errorAlert.setTitle("Error Message");
+                errorAlert.setHeaderText(null);
+                errorAlert.setContentText("An error occurred while updating the password.");
+                errorAlert.showAndWait();
+            } finally {
+                try {
+                    if (prepare != null) prepare.close();
+                    if (connect != null) connect.close();
+                } catch (SQLException e) {
+                    e.printStackTrace();
+                }
+            }
+        }
+    }
+
+
+    
+    
+    public void switchForgotPass (ActionEvent event) {
+    	question_Form.setVisible(true);
+    	si_loginform.setVisible(false);
+    	
+    	ForgotpassQuestionList();
+    	
+    }
+    public void Backsi(ActionEvent event) { 
+    	question_Form.setVisible(false);
+    	si_loginform.setVisible(true);
+    }
+    public void Backfp(ActionEvent event) { 
+    	question_Form.setVisible(true);
+
+		np_newPassform.setVisible(false);
+    }
+    
+
+
     public void switchForm(ActionEvent event) {
     	
     	System.out.println("Button clicked");
@@ -183,6 +419,10 @@ public class Controller implements Initializable{
     		slider.setOnFinished((ActionEvent e)-> {
     			side_alreadybtn.setVisible(true);
     			side_createbtn1.setVisible(false);
+    			
+    			np_newPassform.setVisible(false);
+    	    	question_Form.setVisible(false);
+    	    	si_loginform.setVisible(true);
     			
     			regLquestionList();
     			
@@ -198,6 +438,11 @@ public class Controller implements Initializable{
     		slider.setOnFinished((ActionEvent e)-> {
     			side_alreadybtn.setVisible(false);
     			side_createbtn1.setVisible(true);
+    			
+    			np_newPassform.setVisible(false);
+    	    	question_Form.setVisible(false);
+    	    	si_loginform.setVisible(true);
+    			
     		});
     		slider.play();
     	}
